@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { FaPlayCircle, FaCodeBranch, FaClock, FaStar, FaLightbulb } from 'react-icons/fa';
+import AIChatBot from '../components/AIChatBot';
 import { db, auth } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { HEALTHCARE_CAREERS, SKILL_RECOMMENDATIONS } from '../utils/skillData';
+import { fetchAIRecommendations } from '../services/aiService';
 
 const Recommendations = () => {
     const [loading, setLoading] = useState(true);
     const [recommendations, setRecommendations] = useState([]);
     const [aiExplanation, setAiExplanation] = useState('');
     const [careerGoal, setCareerGoal] = useState('');
+    const [weakSkills, setWeakSkills] = useState([]);
+    const [missingSkills, setMissingSkills] = useState([]);
 
     // --- REUSED LOGIC FROM ASSESSMENT (Ideally could be a hook, but keeping simple) ---
     const getLevelValue = (level) => {
@@ -129,35 +133,74 @@ const Recommendations = () => {
                 });
 
                 // 5. Generate Recommendations
-                const recData = generateRecommendations(targetTitle, missing, weak);
-                setAiExplanation(generateAIExplanation(targetTitle, missing, weak));
+                setWeakSkills(weak);
+                setMissingSkills(missing);
 
-                // 6. Format for UI (Mixing Courses and Projects)
+                // Try AI first
+                let recData = null;
+                let aiText = '';
+
+                try {
+                    const aiResult = await fetchAIRecommendations(targetTitle, weak, missing);
+                    if (aiResult && aiResult.recommendations) {
+                        recData = {
+                            courses: aiResult.recommendations.filter(r => r.type === 'course'),
+                            projects: aiResult.recommendations.filter(r => r.type === 'project'),
+                            // Mix others if needed, but for now structure differs slightly so we adapt below
+                            fullList: aiResult.recommendations
+                        };
+                        aiText = aiResult.explanation;
+                    }
+                } catch (e) {
+                    console.log("AI Service unavailable, falling back to local logic");
+                }
+
+                // Fallback to local logic if AI failed
+                if (!recData) {
+                    const localData = generateRecommendations(targetTitle, missing, weak);
+                    recData = localData;
+                    aiText = generateAIExplanation(targetTitle, missing, weak);
+                }
+
+                setAiExplanation(aiText);
+
+                // 6. Format for UI
                 const uiItems = [];
 
-                recData.courses.forEach((c, idx) => {
-                    uiItems.push({
-                        type: 'course',
-                        title: c,
-                        provider: 'Coursera', // Placeholder
-                        duration: '4 Weeks',
-                        rating: 4.8,
-                        tags: ['Healthcare', 'Skill Building'],
-                        image: `https://source.unsplash.com/random/300x200?education,${idx}`
+                if (recData.fullList) {
+                    // AI Data Structure
+                    recData.fullList.forEach((item, idx) => {
+                        uiItems.push({
+                            ...item,
+                            image: item.image || `https://source.unsplash.com/random/300x200?${item.tags?.[0] || 'technology'},${idx}`
+                        });
                     });
-                });
+                } else {
+                    // Local Data Structure
+                    recData.courses.forEach((c, idx) => {
+                        uiItems.push({
+                            type: 'course',
+                            title: c,
+                            provider: 'Coursera', // Placeholder
+                            duration: '4 Weeks',
+                            rating: 4.8,
+                            tags: ['Healthcare', 'Skill Building'],
+                            image: `https://source.unsplash.com/random/300x200?education,${idx}`
+                        });
+                    });
 
-                recData.projects.forEach((p, idx) => {
-                    uiItems.push({
-                        type: 'project',
-                        title: p,
-                        provider: 'HAPSIS Projects',
-                        duration: '20 Hours',
-                        rating: 4.9,
-                        tags: ['Practical', 'Portfolio'],
-                        image: `https://source.unsplash.com/random/300x200?technology,${idx}`
+                    recData.projects.forEach((p, idx) => {
+                        uiItems.push({
+                            type: 'project',
+                            title: p,
+                            provider: 'HAPSIS Projects',
+                            duration: '20 Hours',
+                            rating: 4.9,
+                            tags: ['Practical', 'Portfolio'],
+                            image: `https://source.unsplash.com/random/300x200?technology,${idx}`
+                        });
                     });
-                });
+                }
 
                 if (uiItems.length === 0) {
                     // Default item if no recommendations found
@@ -230,6 +273,20 @@ const Recommendations = () => {
                             <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{item.title}</h3>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>by {item.provider}</p>
 
+                            {item.purpose && (
+                                <div style={{
+                                    fontSize: '0.8rem',
+                                    color: '#fff',
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    padding: '0.3rem 0.6rem',
+                                    borderRadius: '4px',
+                                    marginBottom: '1rem',
+                                    display: 'inline-block'
+                                }}>
+                                    🎯 {item.purpose}
+                                </div>
+                            )}
+
                             <div style={{ display: 'flex', gap: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '1.5rem' }}>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><FaClock /> {item.duration}</span>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><FaStar style={{ color: '#eab308' }} /> {item.rating}</span>
@@ -241,13 +298,20 @@ const Recommendations = () => {
                                 ))}
                             </div>
 
-                            <button className="glass-button" style={{ marginTop: '1.5rem', width: '100%' }}>
+                            <a
+                                href={item.link || `https://www.google.com/search?q=${encodeURIComponent(item.title + " " + item.provider + " course")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="glass-button"
+                                style={{ marginTop: '1.5rem', width: '100%', textAlign: 'center', display: 'block', textDecoration: 'none' }}
+                            >
                                 {item.type === 'course' ? 'Start Learning' : 'View Project Brief'}
-                            </button>
+                            </a>
                         </div>
                     </div>
                 ))}
             </div>
+            <AIChatBot careerGoal={careerGoal} weakSkills={weakSkills} missingSkills={missingSkills} />
         </div>
     );
 };

@@ -203,54 +203,96 @@ export const HEALTHCARE_CAREERS = {
 };
 
 // 2. SKILL → COURSE / PROJECT MAPPING (DATA - DRIVEN)
+// 2. SKILL → COURSE / PROJECT MAPPING (DATA - DRIVEN)
 export const SKILL_RECOMMENDATIONS = {
     "Cardiac Anatomy": {
-        courses: ["Cardiac Anatomy & Physiology"],
-        projects: ["Heart Disease Risk Prediction System"]
+        gap: {
+            courses: ["Cardiac Anatomy & Physiology"],
+            projects: ["Heart Disease Risk Prediction System"]
+        },
+        mastery: {
+            courses: ["Advanced Structural Heart Interventions", "3D Cardiac Modelling"],
+            projects: ["Lead a Virtual Heart Surgery Simulation", "Research: Congenital Heart Defect Trends"]
+        }
     },
     "ECG Interpretation": {
-        courses: ["ECG Interpretation for Beginners"],
-        projects: ["ECG Signal Analysis Tool"]
+        gap: {
+            courses: ["ECG Interpretation for Beginners"],
+            projects: ["ECG Signal Analysis Tool"]
+        },
+        mastery: {
+            courses: ["Advanced Arrhythmia Recognition"],
+            projects: ["Develop AI-based ECG Triage Algo"]
+        }
     },
     "Health Informatics": {
-        courses: ["Health Informatics Fundamentals"],
-        projects: ["Electronic Health Record System"]
+        gap: {
+            courses: ["Health Informatics Fundamentals"],
+            projects: ["Electronic Health Record System"]
+        },
+        mastery: {
+            courses: ["Clinical Data Standards (HL7/FHIR)"],
+            projects: ["Interoperable Health Data Exchange"]
+        }
     },
     "Clinical Diagnosis": {
-        courses: ["Clinical Diagnosis Mastery"],
-        projects: ["Patient Diagnosis Support Tool"]
+        gap: {
+            courses: ["Clinical Diagnosis Mastery"],
+            projects: ["Patient Diagnosis Support Tool"]
+        },
+        mastery: {
+            courses: ["Differential Diagnosis Seminar"],
+            projects: ["Rare Disease Case Study Series"]
+        }
     },
     "Hypertension Management": {
-        courses: ["Hypertension & Cardiac Risk Management"],
-        projects: ["Blood Pressure Monitoring Dashboard"]
+        gap: {
+            courses: ["Hypertension & Cardiac Risk Management"],
+            projects: ["Blood Pressure Monitoring Dashboard"]
+        },
+        mastery: {
+            courses: ["Resistant Hypertension Strategies"],
+            projects: ["Community Hypertension Awareness Program"]
+        }
     },
     "Neuroanatomy": {
-        courses: ["Neuroanatomy Basics"],
-        projects: ["Stroke Risk Analysis System"]
+        gap: {
+            courses: ["Neuroanatomy Basics"],
+            projects: ["Stroke Risk Analysis System"]
+        },
+        mastery: {
+            courses: ["Functional Neuroimaging"],
+            projects: ["Brain Mapping Project"]
+        }
     },
     "Psychiatric Assessment": {
-        courses: ["Psychiatric Assessment Techniques"],
-        projects: ["Mental Health Screening App"]
+        gap: {
+            courses: ["Psychiatric Assessment Techniques"],
+            projects: ["Mental Health Screening App"]
+        },
+        mastery: {
+            courses: ["Forensic Psychiatry Basics"],
+            projects: ["Crisis Response Protocol Design"]
+        }
     },
-    "Dermatoscopy Basics": {
-        courses: ["Dermatoscopy for Beginners"],
-        projects: ["Skin Disease Detection Tool"]
-    },
-    "Airway Management": {
-        courses: ["Airway & Ventilation Management"],
-        projects: ["Anesthesia Safety Simulator"]
-    },
-    "Herbal Medicine Knowledge": {
-        courses: ["Herbal Medicine & Pharmacology"],
-        projects: ["Herbal Drug Information System"]
-    },
-    // Adding generic fallbacks for testing
     "Data Analysis": {
-        courses: ["Data Science for Health"],
-        projects: ["Patient Data Dashboard"]
+        gap: {
+            courses: ["Data Science for Health"],
+            projects: ["Patient Data Dashboard"]
+        },
+        mastery: {
+            courses: ["Predictive Analytics in Healthcare"],
+            projects: ["Hospital Readmission Prediction Model"]
+        }
     },
     "Python": {
-        courses: ["Python for Medical Research"],
-        projects: ["Bioinformatics Tool"]
+        gap: {
+            courses: ["Python for Medical Research"],
+            projects: ["Bioinformatics Tool"]
+        },
+        mastery: {
+            courses: ["Advanced Medical Image Processing with Python"],
+            projects: ["Auto-Diagnostic AI Bot"]
+        }
     }
 };
