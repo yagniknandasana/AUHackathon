@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { FaPlayCircle, FaCodeBranch, FaClock, FaStar, FaLightbulb } from 'react-icons/fa';
 import AIChatBot from '../components/AIChatBot';
 import { db, auth } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { HEALTHCARE_CAREERS, SKILL_RECOMMENDATIONS } from '../utils/skillData';
 import { fetchAIRecommendations } from '../services/aiService';
+import { completeRecommendation } from '../services/userService';
 
 const Recommendations = () => {
     const [loading, setLoading] = useState(true);
@@ -58,6 +59,34 @@ const Recommendations = () => {
         };
     };
 
+    const handleComplete = async (item) => {
+        if (!confirm(`Mark "${item.title}" as complete? This will update your skill profile.`)) return;
+
+        // Extract skill name from purpose or intelligent guess
+        let skillName = "";
+        if (item.purpose) {
+            skillName = item.purpose.replace('Improve ', '').replace('Learn ', '');
+        } else {
+            // Fallback: This would ideally be passed from the AI explicitly as a 'skill' field, 
+            // but for now we try to map it or default to something generic if unknown.
+            // In a real app, we'd ensure the AI response includes "relatedSkill".
+            skillName = item.tags?.[0] || "General Healthcare";
+        }
+
+        setLoading(true);
+        const user = auth.currentUser;
+        const success = await completeRecommendation(user, skillName, item.type);
+
+        if (success) {
+            // Remove from local list
+            setRecommendations(prev => prev.filter(r => r.title !== item.title));
+            alert("Great job! Your skills have been updated. Check your Dashboard.");
+        } else {
+            alert("Failed to update profile. Please try again.");
+        }
+        setLoading(false);
+    };
+
     const generateAIExplanation = (career, missingSkills, weakSkills) => {
         if (missingSkills.length === 0 && weakSkills.length === 0) {
             return `Excellent work! You are well-prepared for a career in ${career}. Consider exploring advanced specialization projects to stand out further.`;
@@ -66,77 +95,68 @@ const Recommendations = () => {
     };
 
     useEffect(() => {
-        const processUser = async (user) => {
-            try {
-                // 1. Fetch User Data
-                let userData = {};
-                if (user) {
-                    const docSnap = await getDoc(doc(db, "users", user.uid));
-                    if (docSnap.exists()) userData = docSnap.data();
-                } else {
-                    const storedGoal = JSON.parse(localStorage.getItem('userGoal'));
-                    const storedProfile = JSON.parse(localStorage.getItem('userProfile'));
-                    if (storedGoal && storedProfile) userData = { goal: storedGoal, ...storedProfile };
+        let unsubscribeSnapshot = null;
+
+        const processUser = (userData) => {
+            // 2. Identify Target Goal & Skills
+            const storedGoal = userData.goal;
+            const userSkills = userData.skills || [];
+
+            const DOMAIN_TITLES = {
+                'health': 'Healthcare Technology',
+                'agri': 'Agricultural Technology',
+                'city': 'Smart City & Urban Systems'
+            };
+            const targetTitle = storedGoal?.specialization || DOMAIN_TITLES[storedGoal?.domain] || 'Healthcare Technology';
+            setCareerGoal(targetTitle);
+
+            // 3. Get Required Skills
+            let requiredSkillsData = null;
+            if (HEALTHCARE_CAREERS[targetTitle]) {
+                requiredSkillsData = HEALTHCARE_CAREERS[targetTitle];
+            } else if (['Ayurveda', 'Homeopathy', 'Unani Medicine', 'Siddha Medicine', 'Yoga & Naturopathy', 'Ayurvedic Pharmacy & Herbal Technology', 'Integrative Medicine (Allopathy + AYUSH)'].includes(targetTitle)) {
+                requiredSkillsData = HEALTHCARE_CAREERS["AYUSH"];
+            }
+
+            let requiredSkills = [];
+            if (requiredSkillsData) {
+                requiredSkills = [
+                    ...requiredSkillsData.skills.core,
+                    ...requiredSkillsData.skills.technical,
+                    ...requiredSkillsData.skills.supporting
+                ].map(s => ({ skill: s.name, requiredLevel: s.requiredLevel }));
+            } else {
+                // Fallback logic for demo if outside mapped careers
+                requiredSkills = [{ skill: "Data Analysis", requiredLevel: "Intermediate" }];
+            }
+
+            // 4. Calculate Gaps
+            let missing = [];
+            let weak = [];
+
+            requiredSkills.forEach(req => {
+                const userSkill = userSkills.find(s => s.name.toLowerCase() === req.skill.toLowerCase());
+                const reqValue = getLevelValue(req.requiredLevel);
+                const userValue = userSkill ? getLevelValue(userSkill.level) : 0;
+
+                if (!userSkill) {
+                    missing.push(req.skill);
+                } else if (userValue < reqValue) {
+                    weak.push(req.skill);
                 }
+            });
 
-                if (!userData.goal) {
-                    setLoading(false);
-                    return;
-                }
+            // 5. Generate Recommendations
+            setWeakSkills(weak);
+            setMissingSkills(missing);
 
-                // 2. Identify Target Goal & Skills
-                const storedGoal = userData.goal;
-                const userSkills = userData.skills || [];
+            // ... Recommendation Generation Logic ...
+            // We only regenerate AI recommendations if the list CHANGED significantly 
+            // to avoid spamming the API on every small update.
+            // For now, we allow re-generation to ensure consistency.
 
-                const DOMAIN_TITLES = {
-                    'health': 'Healthcare Technology',
-                    'agri': 'Agricultural Technology',
-                    'city': 'Smart City & Urban Systems'
-                };
-                const targetTitle = storedGoal?.specialization || DOMAIN_TITLES[storedGoal?.domain] || 'Healthcare Technology';
-                setCareerGoal(targetTitle);
-
-                // 3. Get Required Skills
-                let requiredSkillsData = null;
-                if (HEALTHCARE_CAREERS[targetTitle]) {
-                    requiredSkillsData = HEALTHCARE_CAREERS[targetTitle];
-                } else if (['Ayurveda', 'Homeopathy', 'Unani Medicine', 'Siddha Medicine', 'Yoga & Naturopathy', 'Ayurvedic Pharmacy & Herbal Technology', 'Integrative Medicine (Allopathy + AYUSH)'].includes(targetTitle)) {
-                    requiredSkillsData = HEALTHCARE_CAREERS["AYUSH"];
-                }
-
-                let requiredSkills = [];
-                if (requiredSkillsData) {
-                    requiredSkills = [
-                        ...requiredSkillsData.skills.core,
-                        ...requiredSkillsData.skills.technical,
-                        ...requiredSkillsData.skills.supporting
-                    ].map(s => ({ skill: s.name, requiredLevel: s.requiredLevel }));
-                } else {
-                    // Fallback logic for demo if outside mapped careers
-                    requiredSkills = [{ skill: "Data Analysis", requiredLevel: "Intermediate" }];
-                }
-
-                // 4. Calculate Gaps
-                let missing = [];
-                let weak = [];
-
-                requiredSkills.forEach(req => {
-                    const userSkill = userSkills.find(s => s.name.toLowerCase() === req.skill.toLowerCase());
-                    const reqValue = getLevelValue(req.requiredLevel);
-                    const userValue = userSkill ? getLevelValue(userSkill.level) : 0;
-
-                    if (!userSkill) {
-                        missing.push(req.skill);
-                    } else if (userValue < reqValue) {
-                        weak.push(req.skill);
-                    }
-                });
-
-                // 5. Generate Recommendations
-                setWeakSkills(weak);
-                setMissingSkills(missing);
-
-                // Try AI first
+            // Try AI first
+            (async () => {
                 let recData = null;
                 let aiText = '';
 
@@ -146,7 +166,6 @@ const Recommendations = () => {
                         recData = {
                             courses: aiResult.recommendations.filter(r => r.type === 'course'),
                             projects: aiResult.recommendations.filter(r => r.type === 'project'),
-                            // Mix others if needed, but for now structure differs slightly so we adapt below
                             fullList: aiResult.recommendations
                         };
                         aiText = aiResult.explanation;
@@ -155,7 +174,7 @@ const Recommendations = () => {
                     console.log("AI Service unavailable, falling back to local logic");
                 }
 
-                // Fallback to local logic if AI failed
+                // Fallback to local logic
                 if (!recData) {
                     const localData = generateRecommendations(targetTitle, missing, weak);
                     recData = localData;
@@ -166,9 +185,7 @@ const Recommendations = () => {
 
                 // 6. Format for UI
                 const uiItems = [];
-
                 if (recData.fullList) {
-                    // AI Data Structure
                     recData.fullList.forEach((item, idx) => {
                         uiItems.push({
                             ...item,
@@ -176,19 +193,17 @@ const Recommendations = () => {
                         });
                     });
                 } else {
-                    // Local Data Structure
                     recData.courses.forEach((c, idx) => {
                         uiItems.push({
                             type: 'course',
                             title: c,
-                            provider: 'Coursera', // Placeholder
+                            provider: 'Coursera',
                             duration: '4 Weeks',
                             rating: 4.8,
                             tags: ['Healthcare', 'Skill Building'],
                             image: `https://source.unsplash.com/random/300x200?education,${idx}`
                         });
                     });
-
                     recData.projects.forEach((p, idx) => {
                         uiItems.push({
                             type: 'project',
@@ -203,7 +218,6 @@ const Recommendations = () => {
                 }
 
                 if (uiItems.length === 0) {
-                    // Default item if no recommendations found
                     uiItems.push({
                         type: 'course',
                         title: "Advanced Healthcare Technology",
@@ -217,17 +231,41 @@ const Recommendations = () => {
 
                 setRecommendations(uiItems);
                 setLoading(false);
-
-            } catch (err) {
-                console.error("Error generating recommendations:", err);
-                setLoading(false);
-            }
+            })();
         };
 
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            processUser(user);
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+                const userDocRef = doc(db, "users", user.uid);
+                unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        processUser(docSnap.data());
+                    }
+                });
+            } else {
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+                const storedGoal = JSON.parse(localStorage.getItem('userGoal'));
+                const storedProfile = JSON.parse(localStorage.getItem('userProfile'));
+                if (storedGoal && storedProfile) {
+                    processUser({ goal: storedGoal, ...storedProfile });
+                } else {
+                    setLoading(false);
+                }
+
+                const handleStorageChange = () => {
+                    const updatedProfile = JSON.parse(localStorage.getItem('userProfile'));
+                    if (updatedProfile) processUser({ goal: storedGoal, ...updatedProfile });
+                };
+                window.addEventListener('storage', handleStorageChange);
+                return () => window.removeEventListener('storage', handleStorageChange);
+            }
         });
-        return () => unsubscribe();
+
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+        };
     }, []);
 
     if (loading) return <div className="text-center p-10">Generating Learning Path...</div>;
@@ -298,15 +336,24 @@ const Recommendations = () => {
                                 ))}
                             </div>
 
-                            <a
-                                href={`https://www.google.com/search?q=${encodeURIComponent(item.searchQuery || (item.title + " " + item.provider + " " + item.type))}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="glass-button"
-                                style={{ marginTop: '1.5rem', width: '100%', textAlign: 'center', display: 'block', textDecoration: 'none' }}
-                            >
-                                {item.type === 'course' ? 'Start Learning' : 'View Project Brief'}
-                            </a>
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                                <a
+                                    href={`https://www.google.com/search?q=${encodeURIComponent(item.searchQuery || (item.title + " " + item.provider + " " + item.type))}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="glass-button"
+                                    style={{ flex: 1, textAlign: 'center', display: 'block', textDecoration: 'none' }}
+                                >
+                                    {item.type === 'course' ? 'Start Learning' : 'View Project Brief'}
+                                </a>
+                                <button
+                                    onClick={() => handleComplete(item)}
+                                    className="glass-button"
+                                    style={{ flex: 1, background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+                                >
+                                    Mark Complete
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))}

@@ -3,7 +3,7 @@ import { FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaChartPie } from 
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { HEALTHCARE_CAREERS } from '../utils/skillData';
 
@@ -16,12 +16,12 @@ const Assessment = () => {
     const [userGoal, setUserGoal] = useState(null);
     const navigate = useNavigate();
 
-    // Helper: Normalize Levels
+    // Helper: Normalize Levels (Matching Dashboard.jsx logic)
     const getLevelValue = (level) => {
         switch (level?.toLowerCase()) {
-            case 'beginner': return 1;
-            case 'intermediate': return 2;
-            case 'advanced': return 3;
+            case 'beginner': return 30;
+            case 'intermediate': return 65;
+            case 'advanced': return 100;
             default: return 0;
         }
     };
@@ -121,21 +121,28 @@ const Assessment = () => {
             setLoading(false);
         };
 
-        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+        let unsubscribeSnapshot = null;
+
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (user) {
-                try {
-                    const docSnap = await getDoc(doc(db, "users", user.uid));
+                // Setup realtime listener for Firebase
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+                const userDocRef = doc(db, "users", user.uid);
+
+                unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
                     if (docSnap.exists()) {
                         calculateAssessment(docSnap.data());
                     } else {
                         setLoading(false);
                     }
-                } catch (e) {
-                    console.error("Error fetching data:", e);
+                }, (error) => {
+                    console.error("Error fetching assessment data:", error);
                     setLoading(false);
-                }
+                });
             } else {
-                // Fallback to LocalStorage for offline/demo
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+                // Fallback to LocalStorage (Standard flow)
                 const storedGoal = JSON.parse(localStorage.getItem('userGoal'));
                 const storedProfile = JSON.parse(localStorage.getItem('userProfile'));
                 if (storedGoal && storedProfile) {
@@ -143,10 +150,21 @@ const Assessment = () => {
                 } else {
                     setLoading(false);
                 }
+
+                // Optional: Listen for local storage changes if testing same-tab updates without nav
+                const handleStorageChange = () => {
+                    const updatedProfile = JSON.parse(localStorage.getItem('userProfile'));
+                    if (updatedProfile) calculateAssessment({ goal: storedGoal, ...updatedProfile });
+                };
+                window.addEventListener('storage', handleStorageChange);
+                return () => window.removeEventListener('storage', handleStorageChange);
             }
         });
 
-        return () => unsubscribeAuth();
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+        };
 
     }, []);
 
@@ -227,7 +245,20 @@ const Assessment = () => {
                         </h4>
                         {missingSkills.length > 0 ? (
                             <ul style={{ paddingLeft: '1.5rem', color: 'var(--text-muted)' }}>
-                                {missingSkills.map(s => <li key={s} style={{ marginBottom: '0.5rem' }}>{s}</li>)}
+                                {missingSkills.map(s => (
+                                    <li key={s} style={{ marginBottom: '0.5rem' }}>
+                                        <a
+                                            href={`https://www.google.com/search?q=Learn+${encodeURIComponent(s)}+course`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: 'inherit', textDecoration: 'none', cursor: 'pointer' }}
+                                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                                        >
+                                            {s}
+                                        </a>
+                                    </li>
+                                ))}
                             </ul>
                         ) : <p style={{ fontSize: '0.9rem' }}>No critical skills missing!</p>}
                     </div>
@@ -238,7 +269,20 @@ const Assessment = () => {
                         </h4>
                         {weakSkills.length > 0 ? (
                             <ul style={{ paddingLeft: '1.5rem', color: 'var(--text-muted)' }}>
-                                {weakSkills.map(s => <li key={s} style={{ marginBottom: '0.5rem' }}>{s}</li>)}
+                                {weakSkills.map(s => (
+                                    <li key={s} style={{ marginBottom: '0.5rem' }}>
+                                        <a
+                                            href={`https://www.google.com/search?q=Improve+${encodeURIComponent(s)}+course`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: 'inherit', textDecoration: 'none', cursor: 'pointer' }}
+                                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                                        >
+                                            {s}
+                                        </a>
+                                    </li>
+                                ))}
                             </ul>
                         ) : <p style={{ fontSize: '0.9rem' }}>Proficiency levels look good!</p>}
                     </div>
