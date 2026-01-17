@@ -8,8 +8,11 @@ const Login = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // In a real app, auth logic here
-        navigate('/dashboard');
+        if (isSignup) {
+            navigate('/setup-profile');
+        } else {
+            navigate('/dashboard');
+        }
     };
 
     const InputField = ({ type, placeholder, icon: Icon }) => (

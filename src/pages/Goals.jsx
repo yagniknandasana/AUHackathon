@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { FaHeartbeat, FaLeaf, FaCity, FaCheckCircle } from 'react-icons/fa';
+import { FaHeartbeat, FaLeaf, FaCity, FaCheckCircle, FaStethoscope, FaSpa } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const Goals = () => {
     const [selectedGoal, setSelectedGoal] = useState(null);
+    const [selectedSpecialization, setSelectedSpecialization] = useState(null);
     const navigate = useNavigate();
 
     const domains = [
@@ -30,12 +31,43 @@ const Goals = () => {
         }
     ];
 
+    const medicalGroups = {
+        modern: [
+            'Gynecology & Obstetrics',
+            'Orthopedics',
+            'Pediatrics',
+            'General Medicine',
+            'General Surgery',
+            'Cardiology',
+            'Neurology',
+            'Dermatology',
+            'Psychiatry',
+            'Anesthesiology'
+        ],
+        ayush: [
+            'Ayurveda',
+            'Homeopathy',
+            'Unani Medicine',
+            'Siddha Medicine',
+            'Yoga & Naturopathy',
+            'Ayurvedic Pharmacy & Herbal Technology',
+            'Integrative Medicine (Allopathy + AYUSH)'
+        ]
+    };
+
     const handleSelect = (id) => {
         setSelectedGoal(id);
+        setSelectedSpecialization(null); // Reset sub-selection when changing main goal
     };
 
     const handleContinue = () => {
         if (selectedGoal) {
+            // Save choices
+            const goalData = {
+                domain: selectedGoal,
+                specialization: selectedSpecialization
+            };
+            localStorage.setItem('userGoal', JSON.stringify(goalData));
             navigate('/assessment');
         }
     };
@@ -47,6 +79,7 @@ const Goals = () => {
                 <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Select the emerging sector you want to master.</p>
             </header>
 
+            {/* Main Domains */}
             <div className="grid-cols-auto" style={{ maxWidth: '1000px', margin: '0 auto 3rem auto' }}>
                 {domains.map((domain) => (
                     <div
@@ -59,9 +92,8 @@ const Goals = () => {
                             position: 'relative',
                             textAlign: 'left',
                             border: selectedGoal === domain.id ? `2px solid ${domain.color}` : '1px solid var(--glass-border)',
-                            transform: selectedGoal === domain.id ? 'translateY(-10px)' : 'none', // Simple selection effect
-                            transition: 'all 0.3s ease',
-                            backgroundColor: selectedGoal === domain.id ? 'rgba(255,255,255,0.08)' : 'var(--bg-card)'
+                            backgroundColor: selectedGoal === domain.id ? 'rgba(255,255,255,0.08)' : 'var(--bg-card)',
+                            transition: 'all 0.3s ease'
                         }}
                     >
                         {selectedGoal === domain.id && (
@@ -86,15 +118,68 @@ const Goals = () => {
                 ))}
             </div>
 
+            {/* Healthcare Specialization Section */}
+            {selectedGoal === 'health' && (
+                <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto 3rem auto', textAlign: 'left' }}>
+                    <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Select Your Specialization</h2>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                        {/* Modern Medicine */}
+                        <div className="glass-panel" style={{ padding: '2rem' }}>
+                            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ec4899' }}>
+                                <FaStethoscope /> Modern Medicine
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                {medicalGroups.modern.map((spec) => (
+                                    <label key={spec} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+                                        <input
+                                            type="radio"
+                                            name="specialization"
+                                            value={spec}
+                                            checked={selectedSpecialization === spec}
+                                            onChange={(e) => setSelectedSpecialization(e.target.value)}
+                                            style={{ accentColor: '#ec4899', width: '1.2rem', height: '1.2rem' }}
+                                        />
+                                        {spec}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* AYUSH */}
+                        <div className="glass-panel" style={{ padding: '2rem' }}>
+                            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#22c55e' }}>
+                                <FaSpa /> AYUSH & Alternative
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                {medicalGroups.ayush.map((spec) => (
+                                    <label key={spec} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+                                        <input
+                                            type="radio"
+                                            name="specialization"
+                                            value={spec}
+                                            checked={selectedSpecialization === spec}
+                                            onChange={(e) => setSelectedSpecialization(e.target.value)}
+                                            style={{ accentColor: '#22c55e', width: '1.2rem', height: '1.2rem' }}
+                                        />
+                                        {spec}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <button
                 className="glass-button"
                 onClick={handleContinue}
-                disabled={!selectedGoal}
+                disabled={!selectedGoal || (selectedGoal === 'health' && !selectedSpecialization)}
                 style={{
                     fontSize: '1.2rem', padding: '1rem 3rem',
-                    background: selectedGoal ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                    cursor: selectedGoal ? 'pointer' : 'not-allowed',
-                    opacity: selectedGoal ? 1 : 0.5
+                    background: (!selectedGoal || (selectedGoal === 'health' && !selectedSpecialization)) ? 'rgba(255,255,255,0.05)' : 'var(--primary)',
+                    cursor: (!selectedGoal || (selectedGoal === 'health' && !selectedSpecialization)) ? 'not-allowed' : 'pointer',
+                    opacity: (!selectedGoal || (selectedGoal === 'health' && !selectedSpecialization)) ? 0.5 : 1
                 }}
             >
                 Continue to Assessment
