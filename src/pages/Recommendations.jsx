@@ -299,7 +299,7 @@ const Recommendations = () => {
                             </div>
 
                             <a
-                                href={item.link || `https://www.google.com/search?q=${encodeURIComponent(item.title + " " + item.provider + " course")}`}
+                                href={`https://www.google.com/search?q=${encodeURIComponent(item.searchQuery || (item.title + " " + item.provider + " " + item.type))}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="glass-button"

@@ -26,7 +26,7 @@ export const fetchAIRecommendations = async (careerGoal, weakSkills, missingSkil
     - tags: array of short strings (e.g., "Beginner", "Hands-on")
     - rating: number between 4.0 and 5.0
     - purpose: string (e.g., "Improve [Skill Name]" or "Learn [Skill Name]")
-    - link: string (URL to the course or a search URL if specific link unknown)
+    - searchQuery: string (optimized Google search query to find this resource, e.g. "React native crash course YouTube")
 
     Return ONLY raw JSON, no markdown formatting.
     `;
