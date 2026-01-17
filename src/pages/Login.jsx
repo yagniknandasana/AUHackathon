@@ -4,6 +4,25 @@ import { useNavigate } from 'react-router-dom';
 import { auth, googleProvider } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 
+const InputField = ({ type, placeholder, icon: Icon, value, onChange, name }) => (
+    <div style={{ position: 'relative', marginBottom: '1rem' }}>
+        <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+            <Icon />
+        </div>
+        <input
+            type={type}
+            name={name}
+            placeholder={placeholder}
+            className="glass-input"
+            style={{ paddingLeft: '3rem' }}
+            required
+            value={value}
+            onChange={onChange}
+            autoComplete="off"
+        />
+    </div>
+);
+
 const Login = () => {
     const [isSignup, setIsSignup] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '', fullName: '' });
@@ -11,7 +30,7 @@ const Login = () => {
     const navigate = useNavigate();
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.type === 'text' && e.target.placeholder === 'Full Name' ? 'fullName' : e.target.type]: e.target.value });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e) => {
@@ -20,7 +39,6 @@ const Login = () => {
         try {
             if (isSignup) {
                 await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-                // Could save fullName to profile here, but let's do it in SetupProfile
                 navigate('/setup-profile');
             } else {
                 await signInWithEmailAndPassword(auth, formData.email, formData.password);
@@ -34,31 +52,11 @@ const Login = () => {
     const handleGoogleSignIn = async () => {
         try {
             await signInWithPopup(auth, googleProvider);
-            // Check if new user? determining redirect logic is harder with popup without custom claims, 
-            // default to dashboard or handle in a global auth listener.
-            // For simplicity:
             navigate('/dashboard');
         } catch (err) {
             setError(err.message);
         }
     };
-
-    const InputField = ({ type, placeholder, icon: Icon, value }) => (
-        <div style={{ position: 'relative', marginBottom: '1rem' }}>
-            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                <Icon />
-            </div>
-            <input
-                type={type}
-                placeholder={placeholder}
-                className="glass-input"
-                style={{ paddingLeft: '3rem' }}
-                required
-                value={value}
-                onChange={handleChange}
-            />
-        </div>
-    );
 
     return (
         <div className="flex-center" style={{ minHeight: 'calc(100vh - 100px)' }}>
@@ -74,10 +72,10 @@ const Login = () => {
 
                 {error && <div style={{ color: '#f43f5e', marginBottom: '1rem', textAlign: 'center', background: 'rgba(244,63,94,0.1)', padding: '0.5rem', borderRadius: '8px' }}>{error}</div>}
 
-                <form onSubmit={handleSubmit}>
-                    {isSignup && <InputField type="text" placeholder="Full Name" icon={FaUser} value={formData.fullName} />}
-                    <InputField type="email" placeholder="Email" icon={FaEnvelope} value={formData.email} />
-                    <InputField type="password" placeholder="Password" icon={FaLock} value={formData.password} />
+                <form onSubmit={handleSubmit} autoComplete="off">
+                    {isSignup && <InputField type="text" name="fullName" placeholder="Full Name" icon={FaUser} value={formData.fullName} onChange={handleChange} />}
+                    <InputField type="email" name="email" placeholder="Email" icon={FaEnvelope} value={formData.email} onChange={handleChange} />
+                    <InputField type="password" name="password" placeholder="Password" icon={FaLock} value={formData.password} onChange={handleChange} />
 
                     <button
                         type="submit"

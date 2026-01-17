@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaChartPie } from 'react-icons/fa';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { HEALTHCARE_CAREERS } from '../utils/skillData';
 
 const Assessment = () => {
     const [readinessScore, setReadinessScore] = useState(0);
@@ -12,36 +14,7 @@ const Assessment = () => {
     const [weakSkills, setWeakSkills] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userGoal, setUserGoal] = useState(null);
-
-    // STEP 1: Load Required Skills (Static Map for Demo)
-    const REQUIRED_SKILLS_MAP = {
-        'Cardiology': [
-            { skill: "Cardiac Anatomy", requiredLevel: "Intermediate" },
-            { skill: "ECG Interpretation", requiredLevel: "Intermediate" },
-            { skill: "Clinical Diagnosis", requiredLevel: "Advanced" },
-            { skill: "Patient Counseling", requiredLevel: "Intermediate" }
-        ],
-        'Neurology': [
-            { skill: "Neuroanatomy", requiredLevel: "Intermediate" },
-            { skill: "EEG Analysis", requiredLevel: "Advanced" },
-            { skill: "Clinical Diagnosis", requiredLevel: "Advanced" }
-        ],
-        // Fallback for generic Healthcare if no specific specialization matches or found
-        'Healthcare Technology': [
-            { skill: "Medical Terminology", requiredLevel: "Intermediate" },
-            { skill: "Patient Care Systems", requiredLevel: "Intermediate" },
-            { skill: "Biomedical Basics", requiredLevel: "Beginner" }
-        ],
-        'Agricultural Technology': [
-            { skill: "IoT Sensors", requiredLevel: "Intermediate" },
-            { skill: "Soil Science", requiredLevel: "Intermediate" }
-        ],
-        'Smart City & Urban Systems': [
-            { skill: "Data Analysis", requiredLevel: "Intermediate" },
-            { skill: "Urban Planning", requiredLevel: "Intermediate" },
-            { skill: "GIS Mapping", requiredLevel: "Advanced" }
-        ]
-    };
+    const navigate = useNavigate();
 
     // Helper: Normalize Levels
     const getLevelValue = (level) => {
@@ -56,7 +29,6 @@ const Assessment = () => {
     useEffect(() => {
         const calculateAssessment = (userData) => {
             const storedGoal = userData.goal || JSON.parse(localStorage.getItem('userGoal'));
-            // User skills might be directly in userData or nested
             const userSkills = userData.skills || [];
 
             // Determine Target Specialization
@@ -68,8 +40,38 @@ const Assessment = () => {
             const targetTitle = storedGoal?.specialization || DOMAIN_TITLES[storedGoal?.domain] || 'Healthcare Technology';
             setUserGoal(targetTitle);
 
-            // Get Required Skills (Fallback to generic if specific not found)
-            const requiredSkills = REQUIRED_SKILLS_MAP[targetTitle] || REQUIRED_SKILLS_MAP['Healthcare Technology'];
+            // Fetch Required Skills 
+            // 1. Check direct match in HEALTHCARE_CAREERS
+            // 2. Check if it's an AYUSH discipline
+            // 3. Fallback to generic
+
+            let requiredSkillsData = null;
+            if (HEALTHCARE_CAREERS[targetTitle]) {
+                requiredSkillsData = HEALTHCARE_CAREERS[targetTitle];
+            } else if (['Ayurveda', 'Homeopathy', 'Unani Medicine', 'Siddha Medicine', 'Yoga & Naturopathy', 'Ayurvedic Pharmacy & Herbal Technology', 'Integrative Medicine (Allopathy + AYUSH)'].includes(targetTitle)) {
+                requiredSkillsData = HEALTHCARE_CAREERS["AYUSH"];
+            }
+
+            // Flatten logic
+            let requiredSkills = [];
+            if (requiredSkillsData) {
+                // Flatten core, technical, supporting
+                requiredSkills = [
+                    ...requiredSkillsData.skills.core,
+                    ...requiredSkillsData.skills.technical,
+                    ...requiredSkillsData.skills.supporting
+                ].map(s => ({ skill: s.name, requiredLevel: s.requiredLevel }));
+            } else {
+                // Fallback for non-healthcare domains (Simple placeholder logic)
+                if (targetTitle === 'Agricultural Technology') {
+                    requiredSkills = [{ skill: "IoT Sensors", requiredLevel: "Intermediate" }, { skill: "Soil Science", requiredLevel: "Intermediate" }];
+                } else if (targetTitle === 'Smart City & Urban Systems') {
+                    requiredSkills = [{ skill: "Data Analysis", requiredLevel: "Intermediate" }, { skill: "Urban Planning", requiredLevel: "Intermediate" }, { skill: "GIS Mapping", requiredLevel: "Advanced" }];
+                } else {
+                    // Default Healthcare fallback if specific map missing
+                    requiredSkills = [{ skill: "Medical Terminology", requiredLevel: "Intermediate" }, { skill: "Patient Care Systems", requiredLevel: "Intermediate" }];
+                }
+            }
 
             // Analysis Arrays
             let totalScore = 0;
@@ -243,7 +245,7 @@ const Assessment = () => {
 
                     <div className="glass-panel" style={{ padding: '1.5rem', background: 'rgba(99,102,241,0.1)' }}>
                         <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Based on this analysis, we have curated a learning path for you.</p>
-                        <button className="glass-button" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>View Recommendations</button>
+                        <button className="glass-button" style={{ width: '100%', display: 'flex', justifyContent: 'center' }} onClick={() => navigate('/recommendations')}>View Recommendations</button>
                     </div>
                 </div>
 

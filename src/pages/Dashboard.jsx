@@ -2,15 +2,17 @@ import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { FaTrophy, FaProjectDiagram, FaBookOpen } from 'react-icons/fa';
 
+import { seedUserData } from '../utils/seedData';
+
 const Dashboard = () => {
     // Mock Data
     const skillData = [
-        { subject: 'Data Analysis', A: 120, fullMark: 150 },
-        { subject: 'Health Tech', A: 98, fullMark: 150 },
-        { subject: 'IoT Systems', A: 86, fullMark: 150 },
-        { subject: 'Project Mgmt', A: 99, fullMark: 150 },
-        { subject: 'Urban Plan', A: 85, fullMark: 150 },
-        { subject: 'Communication', A: 65, fullMark: 150 },
+        { subject: 'Clinical', A: 120, fullMark: 150 },
+        { subject: 'Anatomy', A: 98, fullMark: 150 },
+        { subject: 'Diagnostics', A: 86, fullMark: 150 },
+        { subject: 'Pharma', A: 99, fullMark: 150 },
+        { subject: 'Patient Care', A: 110, fullMark: 150 },
+        { subject: 'Ethics', A: 85, fullMark: 150 },
     ];
 
     const progressData = [
@@ -41,16 +43,21 @@ const Dashboard = () => {
 
     return (
         <div className="container-custom animate-fade-in" style={{ paddingBottom: '2rem' }}>
-            <header style={{ marginBottom: '2rem' }}>
-                <h1 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Welcome back, Alex</h1>
-                <p style={{ color: 'var(--text-muted)' }}>Here is your skill intelligence overview for this week.</p>
+            <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h1 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Welcome back, Dr. Alex</h1>
+                    <p style={{ color: 'var(--text-muted)' }}>Here is your clinical competency overview.</p>
+                </div>
+                <button onClick={seedUserData} className="glass-button" style={{ border: '1px solid var(--accent)', color: 'var(--accent)' }}>
+                    Load Medical Demo
+                </button>
             </header>
 
             {/* Stats Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                <StatCard icon={FaTrophy} title="Skill Score" value="842" subtext="Top 5% of Peers" color="236, 72, 153" />
-                <StatCard icon={FaBookOpen} title="Active Courses" value="3" subtext="12 Hours Remaining" color="99, 102, 241" />
-                <StatCard icon={FaProjectDiagram} title="Completed Projects" value="7" subtext="2 in Portfolio" color="6, 182, 212" />
+                <StatCard icon={FaTrophy} title="Clinical Score" value="842" subtext="Top 5% of Peers" color="236, 72, 153" />
+                <StatCard icon={FaBookOpen} title="Active Modules" value="3" subtext="Cardiology & Ethics" color="99, 102, 241" />
+                <StatCard icon={FaProjectDiagram} title="Case Studies" value="12" subtext="5 Published" color="6, 182, 212" />
             </div>
 
             {/* Charts Grid */}
@@ -58,7 +65,7 @@ const Dashboard = () => {
 
                 {/* Progress Chart */}
                 <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>Learning Trajectory</h3>
+                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>Knowledge Retention</h3>
                     <div style={{ height: '300px', width: '100%' }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={progressData}>
@@ -83,7 +90,7 @@ const Dashboard = () => {
 
                 {/* Skill Radar */}
                 <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>Competency Map</h3>
+                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>Core Competencies</h3>
                     <div style={{ height: '300px', width: '100%' }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <RadarChart cx="50%" cy="50%" outerRadius="80%" data={skillData}>
@@ -102,10 +109,10 @@ const Dashboard = () => {
                 <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>Recommended Next Steps</h3>
                 <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                        <h4 style={{ fontSize: '1.1rem' }}>Smart Cities: Urban Data Analytics</h4>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Fill your 'Data Analysis' gap to unlock Senior roles.</p>
+                        <h4 style={{ fontSize: '1.1rem' }}>Advanced Diagnostic Imaging</h4>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Improve your 'Diagnostics' score to reach Specialist level.</p>
                     </div>
-                    <button className="glass-button">Start Now</button>
+                    <button className="glass-button">Start Module</button>
                 </div>
             </div>
         </div>
