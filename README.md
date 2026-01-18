@@ -1,80 +1,99 @@
-# HAPSIS - Holistic Academic and Professional Skill Intelligence System 🏥
+# MedSkill Navigator 🏥
+### Intelligent Career & Skill Intelligence System for Healthcare
 
-## Project Overview
-**HAPSIS** is an intelligent web application designed to empower healthcare students and professionals. It provides a holistic platform to assess skills, identify gaps, and receive personalized learning recommendations. The system currently focuses on **Healthcare**, offering specialized paths for Modern Medicine and AYUSH.
+## 🚀 Project Overview
+**MedSkill Navigator** is a next-generation career intelligence platform designed for healthcare students and professionals. Unlike generic job portals, it serves as a **GPS for your career**—analyzing your current skills, identifying critical gaps, and building a personalized, AI-driven roadmap to help you achieve your target specialization.
 
-### Key Features
-*   **🩺 Deep Healthcare Focus**: Specialized career paths for Cardiology, Neurology, Pediatrics, AYUSH, and more.
-*   **🧠 Intelligent Skill Assessment**: Analyzes your skill profile against industry standards to identify "Missing" and "Weak" areas.
-*   **⚡ Dual-Track Recommendations**:
-    *   **Gap Filling**: Suggests courses to fix weaknesses.
-    *   **Mastery Building**: Suggests advanced projects for your strengths.
-*   **📊 Clinical Competency Dashboard**: Visualizes your progress in Clinical Skills, Anatomy, Pharma, and Ethics.
-*   **🤖 AI Insights**: Provides contextual explanations for your personalized learning path.
-*   **� AI Chatbot**: Interactive **AI Mentor** to answer your career questions in real-time.
-*   **�🔐 Secure Authentication**: Integrated with Firebase for secure email/password and Google login.
+Whether you are aiming for **Cardiology, Neurology, or AYUSH Medicine**, MedSkill Navigator provides the data-driven insights you need to bridge the gap between education and industry requirements.
 
-## Tech Stack
-*   **Frontend**: React.js (Vite)
+---
+
+## ✨ Key Features
+
+### 🧠 Profile Intelligence
+*   **Dynamic Career Targeting**: Choose your specific target role (e.g., *Neurologist*, *Ayurvedic Practitioner*) and watch the system adapt.
+*   **Live Editing**: real-time updates to your skills, education, and projects.
+*   **Smart Sync**: Changing your goal immediately recalculates your entire assessment.
+
+### 📊 Clinical Competency Dashboard
+*   **Readiness Score**: A real-time "Match Score" (0-100%) showing how qualified you are for your dream role.
+*   **Radar & visual Charts**: Visualize your strengths in Clinical Skills, Patient Care, and Technology.
+*   **Gap Analysis**: Instantly highlights "Missing" and "Weak" skills vs. "Good" ones.
+
+### 🗺️ AI-Powered Roadmap
+*   **Timeline View**: A step-by-step learning journey, not just a list of links.
+*   **Dual-Track Recommendations**:
+    *   **🔴 Gap Filling**: Specific courses to fix missing skills.
+    *   **🟢 Mastery Building**: Advanced projects to showcase your strengths.
+*   **AI Chatbot Mentor**: An integrated AI assistant to answer career queries instantly.
+
+### 🛡️ Enterprise-Grade Architecture
+*   **Secure Authentication**: Protected routes ensuring only logged-in users access sensitive dashboard data.
+*   **Real-time Database**: Powered by Firebase Firestore for instant data sync across devices.
+*   **Glassmorphism UI**: A modern, premium aesthetic designed for engagement.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend Core
+*   **Framework**: React 19 (Vite)
 *   **Language**: JavaScript (ES6+)
-*   **Styling**: Vanilla CSS (Glassmorphism Design System), Responsive Layouts
-*   **Routing**: React Router DOM v6
-*   **State/Backend**: Firebase v9 (Authentication, Firestore Database)
-*   **Visualization**: Recharts (for data visualization)
-*   **Icons**: React Icons (Fa)
+*   **Routing**: React Router DOM v7
+*   **State Management**: React Hooks (`useState`, `useEffect`, `useContext`)
 
-## Setup Steps & How to Run Locally
+### UI & UX
+*   **Styling**: Custom CSS Variables + Glassmorphism Design System
+*   **Animations**: Framer Motion
+*   **Icons**: React Icons (FontAwesome & Lucide)
+*   **Charts**: Recharts (Data Visualization)
+
+### Backend & Services
+*   **Authentication**: Firebase Auth (Email/Password, Google)
+*   **Database**: Cloud Firestore (NoSQL)
+*   **AI Engine**: Google Gemini API (via custom integration)
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-*   Node.js (v14 or higher)
-*   npm (v6 or higher)
+*   Node.js (v18+ recommended)
+*   npm or yarn
 
 ### Installation
-1.  **Clone the repository**:
+
+1.  **Clone the repository**
     ```bash
     git clone https://github.com/yagniknandasana/Team-GRAYT-Code.git
     cd Team-GRAYT-Code
     ```
 
-2.  **Install Dependencies**:
+2.  **Install Dependencies**
     ```bash
     npm install
     ```
 
-3.  **Run the Development Server**:
+3.  **Configure Environment**
+    Create a `.env` file in the root directory and add your Firebase credentials (or update `src/firebase.js` directly for dev):
+    ```env
+    VITE_FIREBASE_API_KEY=your_api_key
+    ...
+    ```
+
+4.  **Run Locally**
     ```bash
     npm run dev
     ```
-    The application will start at `http://localhost:5173`.
+    Open `http://localhost:5173` in your browser.
 
-## Environment Variables & Configuration
-This project uses **Firebase** for backend services. You must configure your own Firebase project.
+---
 
-1.  Go to [Firebase Console](https://console.firebase.google.com/).
-2.  Create a new project.
-3.  Enable **Authentication** (Email/Password and Google Provider).
-4.  Enable **Firestore Database** (Start in Test Mode for development).
-5.  Get your web app configuration object.
-6.  Open `src/firebase.js` and replace the `firebaseConfig` object with yours:
+## 🔒 Security
+*   **Route Protection**: Protected pages (`/dashboard`, `/profile`) are guarded by a dedicated `ProtectedRoute` component.
+*   **Data Safety**: All user data is isolated via Firestore Security Rules.
 
-```javascript
-// src/firebase.js
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
-```
+---
 
-> **Note**: For the AI features to work, you will also need to configure the `src/services/aiService.js` with your specific API key or environment variable.
-
-## Error Handling
-*   **Blank Screen?**: Check the console (`F12`) for errors. Ensure your Firebase config is valid.
-*   **Permission Denied?**: Ensure your Firestore Security Rules allow read/write (for development mode).
-*   **AI Not Responding?**: Verify your API key in `aiService.js`.
-
-## 🛡️ Security Note
-**No secrets are committed in this repository.** The `firebaseConfig` contains public identifiers. Ensure you enable **Firebase Security Rules** and **App Check** before deploying to production.
+## 👥 Team GRAYT
+Built with ❤️ for the Future of Healthcare Education.
