@@ -13,7 +13,6 @@ const Profile = () => {
         role: 'Student',
         education: 'Undergraduate',
         skills: [{ name: 'React', level: 'Intermediate' }],
-        skills: [{ name: 'React', level: 'Intermediate' }],
         courses: [],
         projects: [],
         goal: { specialization: 'General Medicine' } // Default or loaded
@@ -143,6 +142,20 @@ const Profile = () => {
                                         style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.2rem' }}
                                     />
                                 ) : profile.education || 'N/A'}
+                            </span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FaBullseye size={14} />
+                                {isEditing ? (
+                                    <select
+                                        value={profile.goal?.specialization || ''}
+                                        onChange={(e) => setProfile(prev => ({ ...prev, goal: { ...prev.goal, specialization: e.target.value } }))}
+                                        style={{ background: '#1e1b4b', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.2rem', borderRadius: '4px' }}
+                                    >
+                                        {Object.keys(HEALTHCARE_CAREERS).map(career => (
+                                            <option key={career} value={career}>{career}</option>
+                                        ))}
+                                    </select>
+                                ) : (profile.goal?.specialization || 'General Medicine')}
                             </span>
                         </div>
                     </div>

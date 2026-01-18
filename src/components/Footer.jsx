@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaHeart, FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa';
+import logo from '../assets/logo_final.jpg';
 
 const Footer = () => {
     return (
@@ -15,8 +16,9 @@ const Footer = () => {
             <div className="container-custom" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
 
                 {/* Logo & Name */}
-                <div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '0.5rem' }}>MedSkill Navigator</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                    <img src={logo} alt="Logo" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'contain' }} />
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '0' }}>MedSkill Navigator</h3>
                     <p style={{ fontSize: '0.9rem' }}>Holistic Academic and Professional Skill Intelligence System in Healthcare</p>
                 </div>
 
